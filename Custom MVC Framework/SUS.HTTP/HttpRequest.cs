@@ -4,6 +4,7 @@
     using System;
     using System.Text;
     using System.Linq;
+    using SUS.HTTP.Contarcts;
     using System.Collections.Generic;
     
     using System.Net.Http;
@@ -15,18 +16,13 @@
             this.Headers = new List<Header>();
             this.Cookies = new List<Cookie>();
         }
-
-        public HttpRequest(string requestString)
+        public HttpRequest(string requestAsString)
             : this()
         {
-            string[] lines = requestString
-                .Split(new string[] { HttpConstants.NewLine }, StringSplitOptions.None).ToArray();
-
-            string headerLine = lines[0];
-            string[] headerLineParts = headerLine.Split(" ", StringSplitOptions.RemoveEmptyEntries);
-            this.Method = (HttpMethod)Enum.Parse(typeof(HttpMethod), headerLineParts[0], true);
+            string[] lines = requestAsString.Split(HttpConstants.NewLine, StringSplitOptions.None);
+            string[] headerLineParts = lines[0].Split(" ", StringSplitOptions.None);
+            this.Method = (Enums.HttpMethod)Enum.Parse(typeof(Enums.HttpMethod), headerLineParts[0], true);
             this.Path = headerLineParts[1];
-
 
             bool isInHeaders = true;
             StringBuilder bodyBuilder = new StringBuilder();
@@ -49,7 +45,6 @@
                 {
                     bodyBuilder.AppendLine(line);
                 }
-
             }
 
             if (this.Headers.Any(h => h.Name == HttpConstants.RequestCookieHeader))
@@ -57,7 +52,8 @@
                 string[] cookies = this.Headers
                     .FirstOrDefault(h => h.Name == HttpConstants.RequestCookieHeader)
                     .Value.ToString()
-                    .Split("; ", StringSplitOptions.RemoveEmptyEntries);
+                    .Split("; ", StringSplitOptions.RemoveEmptyEntries)
+                    .ToArray();
 
                 foreach (string cookie in cookies)
                 {
@@ -69,7 +65,7 @@
         }
 
         public string Path { get; set; }
-        public HttpMethod Method { get; set; }
+        public SUS.HTTP.Enums.HttpMethod Method { get; set; }
         public ICollection<Header> Headers { get; set; }
         public ICollection<Cookie> Cookies { get; set; }
         public string Body { get; set; }

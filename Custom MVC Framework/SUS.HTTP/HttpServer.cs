@@ -20,14 +20,11 @@
             if (routeTable.Keys.Contains(path))
             {
                 routeTable[path] = action;
-                return;
             }
-
-            routeTable.Add(path, action);
-            //else
-            //{
-            //    routeTable.Add(path, action);
-            //}
+            else
+            {
+                routeTable.Add(path, action);
+            }
         }
 
         public async Task StartAsync(int port = 80)
@@ -35,8 +32,11 @@
             TcpListener tcpListener = new TcpListener(IPAddress.Loopback, port);
             tcpListener.Start();
 
-            TcpClient tcpClient = await tcpListener.AcceptTcpClientAsync();
-            ProcessClientAsync(tcpClient);
+            while (true)
+            {
+                TcpClient tcpClient = await tcpListener.AcceptTcpClientAsync();
+                ProcessClientAsync(tcpClient);
+            }
         }
 
         private async Task ProcessClientAsync(TcpClient tcpClient)
@@ -53,7 +53,6 @@
                 {
                     int length = await stream.ReadAsync(buffer, positionInStream, buffer.Length);
                     positionInStream += length;
-
 
                     if (length < buffer.Length)
                     {
@@ -74,29 +73,31 @@
                 // UTF8 -> Many bytes = 1 symbol
                 string requestString = Encoding.UTF8.GetString(data.ToArray());
                 HttpRequest request = new HttpRequest(requestString);
+                HttpResponse response;
 
-                Console.WriteLine(requestString);
-                Console.WriteLine(new String('-', 80));
+                if (this.routeTable.ContainsKey(request.Path))
+                {
+                    Func<HttpRequest, HttpResponse> action = this.routeTable[request.Path];
+                    response = action(request);
+                }
+                else
+                {
+                    // Not Found 404
+                    response = new HttpResponse("text/html", new byte[0], Enums.HttpStatusCode.NotFound);
+                }
 
-                string responseHtml = "<h1>Welcome!</h1>";
-                byte[] responseBodyBytes = Encoding.UTF8.GetBytes(responseHtml);
+                response.Headers.Add(new Header("Server", "SUS Server 1.0"));
+                response.Cookies.Add(new ResponseCookie("sid", Guid.NewGuid().ToString())
+                { HttpOnly = true, MaxAge = 3 * 24 * 60 * 60 });
+                byte[] responseHeaderBytes = Encoding.UTF8.GetBytes(response.ToString());
 
-                string responseString = $"HTTP/1.1 200 OK {HttpConstants.NewLine}" +
-                                        $"Server: SUS Server 1.0 {HttpConstants.NewLine}" +
-                                        $"Content-Type: text/html charset=utf-8 {HttpConstants.NewLine}" +
-                                        $"Content-Length: {responseBodyBytes.Length}" +
-                                        $"{HttpConstants.NewLine}" +
-                                        $"{HttpConstants.NewLine}";
+                await stream.WriteAsync(responseHeaderBytes, 0, responseHeaderBytes.Length);
+                await stream.WriteAsync(response.Body, 0, response.Body.Length);
 
-                byte[] responseHeadersBytes = Encoding.UTF8.GetBytes(responseString);
-                await stream.WriteAsync(responseHeadersBytes, 0, responseHeadersBytes.Length);
-                await stream.WriteAsync(responseBodyBytes, 0, responseBodyBytes.Length);
-
-                Console.WriteLine(responseString);
-                Console.WriteLine(responseHtml);
+                Console.WriteLine($"Request => {request.Method}");
+                Console.WriteLine($"Response => {(int)response.StatusCode} {response.StatusCode} - " +
+                                  $"{Encoding.UTF8.GetString(response.Body, 0, response.Body.Length)}");
                 Console.WriteLine(new String('=', 80));
-
-                //await stream.WriteAsync();
 
                 tcpClient.Close();
             }
