@@ -69,7 +69,9 @@
                 HttpRequest request = new HttpRequest(requestString);
                 HttpResponse response;
 
-                Route targetRoute = routeTable.FirstOrDefault(r => r.Path == request.Path);
+                Route targetRoute = routeTable
+                    .FirstOrDefault(r => String.Compare(r.Path, request.Path, true) == 0 && 
+                                    r.Method == request.Method);
                 if (targetRoute != null)
                 {
                     response = targetRoute.Action(request);

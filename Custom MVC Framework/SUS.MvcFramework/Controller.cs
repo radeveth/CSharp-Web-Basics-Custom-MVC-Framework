@@ -30,5 +30,13 @@
 
             return response;
         }
+
+        public HttpResponse Redirect(string url)
+        {
+            HttpResponse response = new HttpResponse(HTTP.Enums.HttpStatusCode.Found);
+            response.Headers.Add(new Header("Location", url));
+
+            return response;
+        }
     }
 }

@@ -8,6 +8,18 @@
 
     public class HttpResponse
     {
+        private HttpResponse()
+        {
+            this.Headers = new List<Header>();
+            this.Cookies = new List<ResponseCookie>();
+        }
+
+        public HttpResponse(HttpStatusCode statusCode)
+            : this()
+        {
+            this.StatusCode = statusCode;
+        }
+
         public HttpResponse(string contentType, byte[] body, HttpStatusCode statusCode = HttpStatusCode.Ok)
         {
             this.StatusCode = statusCode;

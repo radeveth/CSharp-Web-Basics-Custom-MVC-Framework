@@ -3,7 +3,7 @@
     using SUS.HTTP;
     using SUS.MvcFramework;
 
-    public class StaticFilesController : Controller
+    public class CardsController : Controller
     {
         public HttpResponse Add(HttpRequest request)
         {
