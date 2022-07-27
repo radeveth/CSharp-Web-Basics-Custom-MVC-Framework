@@ -1,58 +1,33 @@
 ﻿namespace MyFirstMvcApp
 {
-    using System;
 
-    using SUS.HTTP;
-    using System.Net;
-    using System.Net.Sockets;
-    using SUS.HTTP.Contarcts;
+    using System.Collections.Generic;
+
+    using SUS.HHTP;
+    using SUS.MvcFramework;
     using System.Threading.Tasks;
-    using System.Text;
-    using System.IO;
+    using MyFirstMvcApp.Controllers;
 
     public class StartUp
     {
         static async Task Main(string[] args)
         {
-            IHttpServer server = new HttpServer();
-            server.AddRoute("/", HomePage);
-            server.AddRoute("/rado", (request) => new HttpResponse("text/html", new byte[] { 48, 65, 6, 6, 6, 20, 66, 72, 6, 6, 20, 52, 61, 64, 6, 21 })); // random bytes :)
-            server.AddRoute("/favicon.ico", Favicon);
-            server.AddRoute("/about", About);
-            server.AddRoute("/users/login", Login);
-            await server.StartAsync(80);
-        }
-        public static HttpResponse HomePage(HttpRequest request)
-        {
-            string responseHtml = "<h1>Welcome!</h1>";
-            byte[] responseBodyBytes = Encoding.UTF8.GetBytes(responseHtml);
-            var response = new HttpResponse("text/html", responseBodyBytes);
+            List<Route> routeTable = new List<Route>();
 
-            return response;
-        }
-        public static HttpResponse Favicon(HttpRequest request)
-        {
-            byte[] faviconBytes = File.ReadAllBytes(@"..\..\..\wwwroot\favicon.ico");
-            HttpResponse response = new HttpResponse("image/vnd.microsoft.icon", faviconBytes);
+            routeTable.Add(new Route("/", new HomeController().Index));
+            routeTable.Add(new Route("/favicon.ico", new StaticFilesController().Favicon));
+            routeTable.Add(new Route("/users/login", new UsersController().Login));
+            routeTable.Add(new Route("/users/register", new UsersController().Register));
+            routeTable.Add(new Route("/cards/add", new StaticFilesController().Add));
+            routeTable.Add(new Route("/cards/all", new StaticFilesController().All));
+            routeTable.Add(new Route("/cards/collection", new StaticFilesController().Collection)); 
+            
+            routeTable.Add(new Route("/css/bootstrap.min.css", new StaticFilesController().BootstrapCss));
+            routeTable.Add(new Route("/css/custom.css", new StaticFilesController().CustomCss));
+            routeTable.Add(new Route("/js/bootstrap.bundle.min.js", new StaticFilesController().BootstrapJs));
+            routeTable.Add(new Route("/js/custom.js", new StaticFilesController().CustomJs));
 
-            return response;
-        }
-        public static HttpResponse About(HttpRequest request)
-        {
-            string responseHtml = "<h1>About...</h1>";
-            byte[] responseBodyBytes = Encoding.UTF8.GetBytes(responseHtml);
-            var response = new HttpResponse("text/html", responseBodyBytes);
-
-            return response;
-        }
-
-        public static HttpResponse Login(HttpRequest request)
-        {
-            string responseHtml = "<h1>Login...</h1>";
-            byte[] responseBodyBytes = Encoding.UTF8.GetBytes(responseHtml);
-            var response = new HttpResponse("text/html", responseBodyBytes);
-
-            return response;
+            await Host.CreateHostAsync(routeTable, 80);
         }
     }
 }

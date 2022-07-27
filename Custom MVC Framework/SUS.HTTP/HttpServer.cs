@@ -3,28 +3,22 @@
 
     using System;
     using System.Text;
+    using System.Linq;
     using System.Collections.Generic;
 
     using System.Net;
     using System.Net.Sockets;
     using SUS.HTTP.Contarcts;
     using System.Threading.Tasks;
+    using SUS.HHTP;
 
     public class HttpServer : IHttpServer
     {
-        IDictionary<string, Func<HttpRequest, HttpResponse>> routeTable = 
-            new Dictionary<string, Func<HttpRequest, HttpResponse>>();
+        private List<Route> routeTable;
 
-        public void AddRoute(string path, Func<HttpRequest, HttpResponse> action)
+        public HttpServer(List<Route> routeTable)
         {
-            if (routeTable.Keys.Contains(path))
-            {
-                routeTable[path] = action;
-            }
-            else
-            {
-                routeTable.Add(path, action);
-            }
+            this.routeTable = routeTable;
         }
 
         public async Task StartAsync(int port = 80)
@@ -75,10 +69,10 @@
                 HttpRequest request = new HttpRequest(requestString);
                 HttpResponse response;
 
-                if (this.routeTable.ContainsKey(request.Path))
+                Route targetRoute = routeTable.FirstOrDefault(r => r.Path == request.Path);
+                if (targetRoute != null)
                 {
-                    Func<HttpRequest, HttpResponse> action = this.routeTable[request.Path];
-                    response = action(request);
+                    response = targetRoute.Action(request);
                 }
                 else
                 {
@@ -94,9 +88,9 @@
                 await stream.WriteAsync(responseHeaderBytes, 0, responseHeaderBytes.Length);
                 await stream.WriteAsync(response.Body, 0, response.Body.Length);
 
-                Console.WriteLine($"Request => {request.Method}");
-                Console.WriteLine($"Response => {(int)response.StatusCode} {response.StatusCode} - " +
-                                  $"{Encoding.UTF8.GetString(response.Body, 0, response.Body.Length)}");
+                Console.WriteLine($"Request => {request.Method} : {request.Path} : {request.Headers.Count} headers");
+                Console.WriteLine($"Response => {(int)response.StatusCode} {response.StatusCode} : " +
+                                                $"{response.Headers.Count} headers");
                 Console.WriteLine(new String('=', 80));
 
                 tcpClient.Close();
