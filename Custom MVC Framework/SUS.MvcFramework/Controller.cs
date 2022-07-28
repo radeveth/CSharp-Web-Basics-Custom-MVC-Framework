@@ -4,19 +4,31 @@
     using System.Text;
 
     using SUS.HTTP;
-    using System.IO;
     using System.Runtime.CompilerServices;
+    using SUS.MvcFramework.ViewEngine;
 
     public abstract class Controller
     {
-        public HttpResponse View([CallerMemberName] string methodName = null)
+        private SusViewEngine viewEngine;
+        public Controller()
+        {
+            this.viewEngine = new SusViewEngine();
+        }
+
+        public HttpResponse View(object viewModel = null, [CallerMemberName] string methodName = null)
         {
             string layout = System.IO.File.ReadAllText(@"Views\Shared\_Layout.html");
+            layout = layout.Replace("@RenderBody)", "___VIEW_GOES_HERE___");
+            layout = this.viewEngine.GetHtml(layout, viewModel);
 
             // Views\Users\Login.html
             string responseHtml = layout
                 .Replace("@RenderBody()", System.IO.File.ReadAllText
-                        (@$"Views\{this.GetType().Name.Replace("Controller", string.Empty)}\{methodName}.html")); 
+                        (@$"Views\{this.GetType().Name.Replace("Controller", string.Empty)}\{methodName}.html"));
+
+            responseHtml = this.viewEngine.GetHtml(responseHtml, viewModel);
+
+
             byte[] responseBodyBytes = Encoding.UTF8.GetBytes(responseHtml);
             var response = new HttpResponse("text/html", responseBodyBytes);
 

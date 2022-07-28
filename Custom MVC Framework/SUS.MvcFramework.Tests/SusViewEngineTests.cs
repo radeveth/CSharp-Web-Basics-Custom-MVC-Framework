@@ -30,18 +30,11 @@ namespace SUS.MvcFramework.Tests
             };
 
             IViewEngine viewEngine = new SusViewEngine();
-            string view = File.ReadAllText(@$"ViewTests\{fileName}.Result.html");
+            string view = File.ReadAllText(@$"ViewTests\{fileName}.html");
             string result = viewEngine.GetHtml(view, viewlModel);
             string expected = File.ReadAllText(@$"ViewTests\{fileName}.Result.html");
 
             Assert.Equal(expected, result);
-        }
-
-        public class TestViewModel
-        {
-            public string Name { get; set; }
-            public decimal Price { get; set; }
-            public DateTime DateOfBirth { get; set; }
         }
     }
 }
