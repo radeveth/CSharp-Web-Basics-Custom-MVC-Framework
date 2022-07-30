@@ -8,6 +8,7 @@
     using System.Collections.Generic;
     
     using System.Net.Http;
+    using System.Net;
 
     public class HttpRequest
     {
@@ -15,6 +16,7 @@
         {
             this.Headers = new List<Header>();
             this.Cookies = new List<Cookie>();
+            this.FormData = new Dictionary<string, string>();
         }
         public HttpRequest(string requestAsString)
             : this()
@@ -62,12 +64,26 @@
             }
 
             this.Body = bodyBuilder.ToString();
+
+            string[] parameters = this.Body.Split('&', StringSplitOptions.RemoveEmptyEntries);
+            foreach (var parameter in parameters)
+            {
+                string key = parameter.Split("=")[0];
+                string value = WebUtility.UrlDecode(parameter.Split("=")[1]);
+
+                if (!this.FormData.Keys.Contains(key))
+                {
+                    this.FormData[key] = value;
+                }
+            }
         }
 
         public string Path { get; set; }
         public SUS.HTTP.Enums.HttpMethod Method { get; set; }
         public ICollection<Header> Headers { get; set; }
         public ICollection<Cookie> Cookies { get; set; }
+
+        public IDictionary<string, string> FormData { get; set; }
         public string Body { get; set; }
     }
 }

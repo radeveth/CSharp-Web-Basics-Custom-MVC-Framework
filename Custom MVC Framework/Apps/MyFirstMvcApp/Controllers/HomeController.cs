@@ -5,10 +5,12 @@
 
     using SUS.HTTP;
     using SUS.MvcFramework;
+    using SUS.MvcFramework.Attribute;
 
     public class HomeController : Controller
     {
-        public HttpResponse Index(HttpRequest request)
+        [HttpGet("/")]
+        public HttpResponse Index()
         {
             return this.View();
         }

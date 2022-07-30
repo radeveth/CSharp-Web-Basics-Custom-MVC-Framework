@@ -137,9 +137,9 @@
         private IView GenerateExecutableCоde(string csharpCode, object viewModel)
         {
             var compileResult = CSharpCompilation.Create("ViewAssembly")
-                .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
-                .AddReferences(MetadataReference.CreateFromFile(typeof(object).Assembly.Location))
-                .AddReferences(MetadataReference.CreateFromFile(typeof(IView).Assembly.Location));
+               .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
+               .AddReferences(MetadataReference.CreateFromFile(typeof(object).Assembly.Location))
+               .AddReferences(MetadataReference.CreateFromFile(typeof(IView).Assembly.Location));
             if (viewModel != null)
             {
                 if (viewModel.GetType().IsGenericType)
@@ -167,30 +167,29 @@
 
             compileResult = compileResult.AddSyntaxTrees(SyntaxFactory.ParseSyntaxTree(csharpCode));
 
-            using (MemoryStream memoryStream = new MemoryStream())
-            {
-                EmitResult result = compileResult.Emit(memoryStream);
-                if (!result.Success)
-                {
-                    return new ErrorView(result.Diagnostics
-                        .Where(x => x.Severity == DiagnosticSeverity.Error)
-                        .Select(x => x.GetMessage()), csharpCode);
-                }
+            using MemoryStream memoryStream = new MemoryStream();
+            EmitResult result = compileResult.Emit(memoryStream);
 
-                try
-                {
-                    memoryStream.Seek(0, SeekOrigin.Begin);
-                    var byteAssembly = memoryStream.ToArray();
-                    var assembly = Assembly.Load(byteAssembly);
-                    var viewType = assembly.GetType("ViewNamespace.ViewClass");
-                    var instance = Activator.CreateInstance(viewType);
-                    return (instance as IView)
-                        ?? new ErrorView(new List<string> { "Instance is null!" }, csharpCode);
-                }
-                catch (Exception ex)
-                {
-                    return new ErrorView(new List<string> { ex.ToString() }, csharpCode);
-                }
+            if (!result.Success)
+            {
+                return new ErrorView(result.Diagnostics
+                    .Where(x => x.Severity == DiagnosticSeverity.Error)
+                    .Select(x => x.GetMessage()), csharpCode);
+            }
+
+            try
+            {
+                memoryStream.Seek(0, SeekOrigin.Begin);
+                var byteAssembly = memoryStream.ToArray();
+                var assembly = Assembly.Load(byteAssembly);
+                var viewType = assembly.GetType("ViewNamespace.ViewClass");
+                var instance = Activator.CreateInstance(viewType);
+                return (instance as IView)
+                    ?? new ErrorView(new List<string> { "Instance is null!" }, csharpCode);
+            }
+            catch (Exception ex)
+            {
+                return new ErrorView(new List<string> { ex.ToString() }, csharpCode);
             }
         }
     }
